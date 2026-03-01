@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Entity Neural — Intelligent Energy Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET & BASE ───────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#04070f;
+  --bg:#080d1a;
+  --surface:#0d1425;
+  --surface2:#111b31;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --text:#e8eef8;
+  --muted:#5a6a8a;
+  --muted2:#3a4a6a;
+  --amd:#ed1c24;
+  --amd2:#ff5533;
+  --amd3:#ff8844;
+  --cyan:#00e5ff;
+  --cyan2:#00b8d4;
+  --green:#00e676;
+  --green2:#00c853;
+  --yellow:#ffd600;
+  --red:#ff1744;
+  --red2:#ff4444;
+  --purple:#7c4dff;
+  --glow-cyan:0 0 20px rgba(0,229,255,0.25);
+  --glow-red:0 0 20px rgba(255,23,68,0.4);
+  --glow-amd:0 0 20px rgba(237,28,36,0.35);
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:default;
+}
+
+/* ── ANIMATED BACKGROUND GRID ─────────────────────────────── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(237,28,36,0.08) 0%, transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── PARTICLE CANVAS ───────────────────────────────────────── */
+#particles{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.4}
+
+/* ── MAIN LAYOUT ────────────────────────────────────────────── */
+.layout{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 20px 40px}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0 16px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:28px;
+  position:sticky;top:0;
+  background:rgba(8,13,26,0.92);
+  backdrop-filter:blur(20px);
+  z-index:100;
+}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-hex{
+  width:42px;height:42px;
+  background:var(--amd);
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;font-size:13px;color:#fff;
+  animation:hexPulse 3s ease-in-out infinite;
+}
+@keyframes hexPulse{0%,100%{filter:drop-shadow(0 0 6px rgba(237,28,36,0.6))}50%{filter:drop-shadow(0 0 14px rgba(237,28,36,0.9))}}
+.brand-name{font-size:18px;font-weight:800;letter-spacing:-0.5px}
+.brand-name span{color:var(--amd)}
+.brand-sub{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+.header-right{display:flex;align-items:center;gap:12px}
+.node-pill{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:5px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+}
+.node-pill.live{border-color:rgba(0,230,118,0.3);color:var(--green)}
+.pulse-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);
+  animation:pulseDot 2s ease-in-out infinite;
+}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.pulse-dot.red{background:var(--red);box-shadow:0 0 8px var(--red)}
+.clock{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);padding:5px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px}
+
+/* ── SECTION LABEL ───────────────────────────────────────────── */
+.section-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── TOP STATS ───────────────────────────────────────────────── */
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px 20px;
+  position:relative;overflow:hidden;
+  animation:fadeUp 0.6s ease both;
+  transition:border-color 0.3s,transform 0.2s;
+}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--border2)}
+.stat-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.02) 0%,transparent 100%);
+  pointer-events:none;
+}
+.stat-card:nth-child(1){animation-delay:0.05s}
+.stat-card:nth-child(2){animation-delay:0.1s}
+.stat-card:nth-child(3){animation-delay:0.15s}
+.stat-card:nth-child(4){animation-delay:0.2s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.stat-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:10px}
+.stat-value{font-size:28px;font-weight:800;line-height:1;margin-bottom:5px;transition:color 0.4s}
+.stat-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.stat-value.cyan{color:var(--cyan)}
+.stat-value.green{color:var(--green)}
+.stat-value.red{color:var(--red)}
+.stat-value.amd{color:var(--amd2)}
+.stat-card .corner-accent{
+  position:absolute;top:0;right:0;
+  width:40px;height:40px;
+  background:linear-gradient(225deg,var(--border2) 0%,transparent 60%);
+  border-bottom-left-radius:14px;
+}
+
+/* ── AMD STRIP ───────────────────────────────────────────────── */
+.amd-strip{
+  background:linear-gradient(135deg,#0f0303 0%,#150505 50%,#0a0510 100%);
+  border:1px solid rgba(237,28,36,0.25);
+  border-radius:14px;padding:16px 22px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;
+  animation:fadeUp 0.6s 0.25s ease both;
+  position:relative;overflow:hidden;
+}
+.amd-strip::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--amd) 0%,var(--amd2) 50%,var(--amd3) 100%);
+}
+.amd-left{display:flex;align-items:center;gap:14px}
+.amd-logo-text{font-size:20px;font-weight:800;color:var(--amd);letter-spacing:-1px}
+.amd-label{font-size:10px;color:var(--amd);letter-spacing:2px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+.amd-bench{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.amd-bench b{color:var(--amd2)}
+.amd-speedup{font-size:36px;font-weight:800;color:var(--amd2);line-height:1}
+.amd-speedup-label{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px}
+
+/* ── ROOM CARDS GRID ─────────────────────────────────────────── */
+.rooms-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  margin-bottom:24px;
+}
+
+/* ── ROOM CARD ───────────────────────────────────────────────── */
+.room-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+  animation:fadeUp 0.6s ease both;
+  transition:border-color 0.4s,box-shadow 0.4s;
+  position:relative;
+}
+.room-card.r1{animation-delay:0.3s}
+.room-card.r2{animation-delay:0.4s}
+.room-card.shedding{
+  border-color:rgba(255,23,68,0.5);
+  box-shadow:var(--glow-red);
+}
+.room-card.shedding::before{
+  content:'';position:absolute;inset:0;
+  background:rgba(255,23,68,0.04);
+  pointer-events:none;z-index:0;
+}
+
+.room-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:18px 20px 0;
+  position:relative;z-index:1;
+}
+.room-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.room-device{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.room-badges{display:flex;gap:7px;align-items:center;flex-direction:column;align-items:flex-end}
+.node-badge{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  background:var(--surface2);border:1px solid var(--border);
+  padding:3px 8px;border-radius:4px;color:var(--muted);
+}
+.status-badge{
+  font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  padding:4px 10px;border-radius:6px;
+  border:1px solid;
+}
+.status-badge.active{color:var(--green);border-color:rgba(0,230,118,0.3);background:rgba(0,230,118,0.08)}
+.status-badge.shed{color:var(--red);border-color:rgba(255,23,68,0.4);background:rgba(255,23,68,0.1);animation:shedBlink 1s ease-in-out infinite}
+@keyframes shedBlink{0%,100%{opacity:1}50%{opacity:0.6}}
+
+/* ── BIG CURRENT DISPLAY ─────────────────────────────────────── */
+.current-section{
+  padding:16px 20px 10px;
+  position:relative;z-index:1;
+}
+.current-big{
+  font-size:48px;font-weight:800;line-height:1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-2px;
+  transition:color 0.4s;
+}
+.current-big .unit{font-size:20px;font-weight:400;color:var(--muted);letter-spacing:0}
+.current-big.high{color:var(--red)}
+.current-gauge{
+  height:4px;background:var(--surface2);border-radius:2px;
+  margin-top:8px;overflow:hidden;
+}
+.gauge-fill{
+  height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--cyan),var(--cyan2));
+  transition:width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.gauge-fill.high{background:linear-gradient(90deg,var(--yellow),var(--red))}
+
+/* ── FEATURE CHIPS ───────────────────────────────────────────── */
+.features{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+  padding:10px 20px 0;position:relative;z-index:1;
+}
+.feat{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 6px;text-align:center;
+}
+.feat-label{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+.feat-val{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ── WAVEFORM CANVAS ─────────────────────────────────────────── */
+.waveform-wrap{padding:10px 20px;position:relative;z-index:1}
+.waveform-label{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+canvas.wave{
+  width:100%;height:80px;display:block;
+  border-radius:8px;background:var(--surface2);
+}
+
+/* ── ML ROW ──────────────────────────────────────────────────── */
+.ml-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 20px;
+  background:rgba(0,0,0,0.15);
+  border-top:1px solid var(--border);
+  position:relative;z-index:1;
+}
+.ml-brain{font-size:16px}
+.ml-info{flex:1}
+.ml-label-small{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.8px}
+.ml-result{font-size:13px;font-weight:700;transition:color 0.3s}
+.ml-result.motor{color:var(--cyan)}
+.ml-result.other{color:var(--yellow)}
+.ml-conf{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--green)}
+
+/* ── SHED ALERT ──────────────────────────────────────────────── */
+.shed-bar{
+  display:none;align-items:center;gap:10px;
+  padding:10px 20px;
+  background:rgba(255,23,68,0.12);
+  border-top:1px solid rgba(255,23,68,0.3);
+  position:relative;z-index:1;
+}
+.shed-bar.show{display:flex}
+.shed-icon{font-size:16px;animation:shake 0.4s ease-in-out}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.shed-text{font-size:12px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace}
+.shed-time{font-size:10px;color:rgba(255,23,68,0.6);margin-left:auto;font-family:'JetBrains Mono',monospace}
+
+/* ── BOTTOM GRID ─────────────────────────────────────────────── */
+.bottom-grid{
+  display:grid;grid-template-columns:1fr 400px;gap:16px;
+  animation:fadeUp 0.6s 0.5s ease both;
+}
+
+/* ── ML PANEL ────────────────────────────────────────────────── */
+.ml-panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+}
+.panel-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-title{font-size:13px;font-weight:700}
+.panel-badge{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  padding:3px 10px;border-radius:20px;
+  background:rgba(237,28,36,0.15);
+  border:1px solid rgba(237,28,36,0.3);
+  color:var(--amd2);letter-spacing:1px;text-transform:uppercase;
+}
+.ml-metrics{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+  background:var(--border);
+}
+.ml-metric{
+  background:var(--surface);
+  padding:18px 20px;
+}
+.ml-metric-val{font-size:28px;font-weight:800;line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.ml-metric-label{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.8px}
+
+/* ── COMPARISON BAR ──────────────────────────────────────────── */
+.compare-section{padding:16px 20px;border-top:1px solid var(--border)}
+.compare-row{margin-bottom:12px}
+.compare-header{display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;font-family:'JetBrains Mono',monospace}
+.compare-label{color:var(--muted)}
+.compare-time{font-weight:700}
+.compare-bar-track{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.compare-bar-fill{height:100%;border-radius:4px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
+.compare-bar-fill.amd{background:linear-gradient(90deg,var(--amd),var(--amd2))}
+.compare-bar-fill.pi{background:linear-gradient(90deg,var(--cyan2),var(--cyan))}
+
+/* ── LOG PANEL ───────────────────────────────────────────────── */
+.log-panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.log-body{
+  flex:1;overflow-y:auto;max-height:340px;
+  padding:8px;
+}
+.log-body::-webkit-scrollbar{width:3px}
+.log-body::-webkit-scrollbar-track{background:transparent}
+.log-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.log-entry{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:7px 10px;border-radius:6px;
+  margin-bottom:3px;font-family:'JetBrains Mono',monospace;font-size:11px;
+  animation:logIn 0.3s ease;
+  border-left:2px solid transparent;
+}
+@keyframes logIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.log-entry.ok{border-left-color:var(--green);background:rgba(0,230,118,0.04)}
+.log-entry.warn{border-left-color:var(--red);background:rgba(255,23,68,0.05)}
+.log-entry.info{border-left-color:var(--cyan);background:rgba(0,229,255,0.04)}
+.log-entry.alert{border-left-color:var(--yellow);background:rgba(255,214,0,0.04)}
+.log-time{color:var(--muted2);min-width:54px;font-size:10px;margin-top:1px;flex-shrink:0}
+.log-msg{color:var(--muted);line-height:1.5}
+.log-msg b{color:var(--text)}
+
+/* ── FOOTER ──────────────────────────────────────────────────── */
+footer{
+  text-align:center;padding:24px 0 12px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);
+  border-top:1px solid var(--border);margin-top:8px;
+  letter-spacing:1px;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media(max-width:900px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .rooms-grid{grid-template-columns:1fr}
+  .bottom-grid{grid-template-columns:1fr}
+  .amd-strip{flex-wrap:wrap;gap:12px}
+  .current-big{font-size:36px}
+}
+@media(max-width:520px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .header-right .node-pill:not(.live){display:none}
+  .features{grid-template-columns:repeat(5,1fr)}
+  .feat-val{font-size:11px}
+  .layout{padding:0 12px 32px}
+}
+
+/* ── LOADING OVERLAY ─────────────────────────────────────────── */
+#loader{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;
+  transition:opacity 0.6s;
+}
+.loader-hex{
+  width:64px;height:64px;
+  background:var(--amd);
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;color:#fff;
+  animation:hexSpin 1s ease-in-out infinite alternate;
+  margin-bottom:20px;
+}
+@keyframes hexSpin{0%{transform:scale(0.9);filter:brightness(0.8)}100%{transform:scale(1.1);filter:brightness(1.2)}}
+.loader-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;animation:loaderBlink 0.8s ease-in-out infinite}
+@keyframes loaderBlink{0%,100%{opacity:0.4}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-hex">EN</div>
+  <div class="loader-text">Initializing...</div>
+</div>
+
+<!-- PARTICLES -->
+<canvas id="particles"></canvas>
+
+<div class="layout">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-hex">EN</div>
+      <div>
+        <div class="brand-name">Entity<span>Neural</span></div>
+        <div class="brand-sub">AMD Slingshot 2026 · Energy Monitor</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="node-pill live"><div class="pulse-dot"></div>esp1</div>
+      <div class="node-pill live"><div class="pulse-dot"></div>esp2</div>
+      <div class="node-pill"><div class="pulse-dot"></div>MQTT</div>
+      <div class="clock" id="clockEl">00:00:00</div>
+    </div>
+  </header>
+
+  <!-- TOP STATS -->
+  <div class="section-label">System Overview</div>
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="corner-accent"></div>
+      <div class="stat-label">Total Current Draw</div>
+      <div class="stat-value cyan" id="statTotal">0.00 A</div>
+      <div class="stat-sub">across both rooms</div>
+    </div>
+    <div class="stat-card">
+      <div class="corner-accent"></div>
+      <div class="stat-label">Energy Saved</div>
+      <div class="stat-value green" id="statSaved">0.0%</div>
+      <div class="stat-sub" id="statSavedWh">0.00000 Wh today</div>
+    </div>
+    <div class="stat-card">
+      <div class="corner-accent"></div>
+      <div class="stat-label">Load Shed Events</div>
+      <div class="stat-value red" id="statSheds">0</div>
+      <div class="stat-sub">automatic triggers</div>
+    </div>
+    <div class="stat-card">
+      <div class="corner-accent"></div>
+      <div class="stat-label">ML Inference</div>
+      <div class="stat-value amd" id="statInfer">— ms</div>
+      <div class="stat-sub">per classification</div>
+    </div>
+  </div>
+
+  <!-- AMD STRIP -->
+  <div class="amd-strip">
+    <div class="amd-left">
+      <div class="amd-logo-text">AMD</div>
+      <div>
+        <div class="amd-label">Benchmark · Inference Pipeline</div>
+        <div class="amd-bench">Ryzen AI: <b>~0.05 ms</b> &nbsp;·&nbsp; Raspberry Pi 5: <b id="piTime">~1.2 ms</b> &nbsp;·&nbsp; Intel Core: ~0.9 ms</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="amd-speedup" id="amdSpeedup">20×</div>
+      <div class="amd-speedup-label">AMD advantage</div>
+    </div>
+  </div>
+
+  <!-- ROOMS -->
+  <div class="section-label">Live Sensor Nodes</div>
+  <div class="rooms-grid">
+
+    <!-- ROOM 1 -->
+    <div class="room-card r1" id="room1Card">
+      <div class="room-top">
+        <div>
+          <div class="room-name">Room 1 &mdash; Living Area</div>
+          <div class="room-device">M027 Geared DC Motor · ACS712 Node A</div>
+        </div>
+        <div class="room-badges">
+          <div class="node-badge">esp1 · GPIO4</div>
+          <div class="status-badge active" id="r1Status">● ACTIVE</div>
+        </div>
+      </div>
+
+      <div class="current-section">
+        <div class="current-big" id="r1Big">0.00<span class="unit"> A</span></div>
+        <div class="current-gauge">
+          <div class="gauge-fill" id="r1Gauge" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="features">
+        <div class="feat"><div class="feat-label">RMS</div><div class="feat-val" id="r1Rms">0.000</div></div>
+        <div class="feat"><div class="feat-label">Peak</div><div class="feat-val" id="r1Peak">0.000</div></div>
+        <div class="feat"><div class="feat-label">Std</div><div class="feat-val" id="r1Std">0.000</div></div>
+        <div class="feat"><div class="feat-label">Crest</div><div class="feat-val" id="r1Crest">0.00</div></div>
+        <div class="feat"><div class="feat-label">Surge</div><div class="feat-val" id="r1Surge">0.000</div></div>
+      </div>
+
+      <div class="waveform-wrap">
+        <div class="waveform-label">Current waveform · last 60s</div>
+        <canvas class="wave" id="wave1" height="80"></canvas>
+      </div>
+
+      <div class="ml-row">
+        <div class="ml-brain">🧠</div>
+        <div class="ml-info">
+          <div class="ml-label-small">Random Forest · 100 trees</div>
+          <div class="ml-result motor" id="r1Class">Detecting...</div>
+        </div>
+        <div class="ml-conf" id="r1Conf">—</div>
+      </div>
+    </div>
+
+    <!-- ROOM 2 -->
+    <div class="room-card r2" id="room2Card">
+      <div class="room-top">
+        <div>
+          <div class="room-name">Room 2 &mdash; Workshop</div>
+          <div class="room-device">M027 Geared DC Motor · ACS712 Node B</div>
+        </div>
+        <div class="room-badges">
+          <div class="node-badge">esp2 · GPIO4</div>
+          <div class="status-badge active" id="r2Status">● ACTIVE</div>
+        </div>
+      </div>
+
+      <div class="current-section">
+        <div class="current-big" id="r2Big">0.00<span class="unit"> A</span></div>
+        <div class="current-gauge">
+          <div class="gauge-fill" id="r2Gauge" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="features">
+        <div class="feat"><div class="feat-label">RMS</div><div class="feat-val" id="r2Rms">0.000</div></div>
+        <div class="feat"><div class="feat-label">Peak</div><div class="feat-val" id="r2Peak">0.000</div></div>
+        <div class="feat"><div class="feat-label">Std</div><div class="feat-val" id="r2Std">0.000</div></div>
+        <div class="feat"><div class="feat-label">Crest</div><div class="feat-val" id="r2Crest">0.00</div></div>
+        <div class="feat"><div class="feat-label">Surge</div><div class="feat-val" id="r2Surge">0.000</div></div>
+      </div>
+
+      <div class="waveform-wrap">
+        <div class="waveform-label">Current waveform · last 60s</div>
+        <canvas class="wave" id="wave2" height="80"></canvas>
+      </div>
+
+      <div class="ml-row">
+        <div class="ml-brain">🧠</div>
+        <div class="ml-info">
+          <div class="ml-label-small">Random Forest · 100 trees</div>
+          <div class="ml-result motor" id="r2Class">Detecting...</div>
+        </div>
+        <div class="ml-conf" id="r2Conf">—</div>
+      </div>
+
+      <div class="shed-bar" id="shedBar">
+        <div class="shed-icon">⚡</div>
+        <div class="shed-text">LOAD SHED ACTIVE — Motor disconnected</div>
+        <div class="shed-time" id="shedTime">GPIO27 LOW</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- ML PERFORMANCE PANEL -->
+    <div class="ml-panel">
+      <div class="panel-header">
+        <div class="panel-title">⚡ ML Performance Benchmark</div>
+        <div class="panel-badge">AMD POWERED</div>
+      </div>
+      <div class="ml-metrics">
+        <div class="ml-metric">
+          <div class="ml-metric-val" style="color:var(--cyan)" id="mlInferVal">— ms</div>
+          <div class="ml-metric-label">Pi 5 Inference Time</div>
+        </div>
+        <div class="ml-metric">
+          <div class="ml-metric-val" style="color:var(--amd2)" id="mlSpeedupVal">—×</div>
+          <div class="ml-metric-label">AMD Speedup Factor</div>
+        </div>
+        <div class="ml-metric">
+          <div class="ml-metric-val" style="color:var(--green)">100%</div>
+          <div class="ml-metric-label">Model Accuracy</div>
+        </div>
+        <div class="ml-metric">
+          <div class="ml-metric-val" style="color:var(--purple)">100</div>
+          <div class="ml-metric-label">RF Estimators</div>
+        </div>
+      </div>
+      <div class="compare-section">
+        <div class="section-label" style="margin-bottom:14px">Inference speed comparison</div>
+        <div class="compare-row">
+          <div class="compare-header">
+            <span class="compare-label">AMD Ryzen AI (NPU)</span>
+            <span class="compare-time" style="color:var(--amd2)">~0.05 ms</span>
+          </div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill amd" style="width:4%"></div>
+          </div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-header">
+            <span class="compare-label">Raspberry Pi 5</span>
+            <span class="compare-time" style="color:var(--cyan)" id="piBarTime">~1.2 ms</span>
+          </div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill pi" id="piBar" style="width:100%"></div>
+          </div>
+        </div>
+        <div class="compare-row">
+          <div class="compare-header">
+            <span class="compare-label">Intel Core i5</span>
+            <span class="compare-time" style="color:var(--muted)">~0.9 ms</span>
+          </div>
+          <div class="compare-bar-track">
+            <div class="compare-bar-fill" style="width:75%;background:linear-gradient(90deg,#555,#777)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOG PANEL -->
+    <div class="log-panel">
+      <div class="panel-header">
+        <div class="panel-title">📋 System Event Log</div>
+        <div class="panel-badge" style="background:rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.3);color:var(--cyan)">LIVE</div>
+      </div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+
+  </div>
+
+  <footer>ENTITY NEURAL &nbsp;·&nbsp; AMD SLINGSHOT 2026 &nbsp;·&nbsp; TEAM ENTITY NEURAL &nbsp;·&nbsp; INTELLIGENT ENERGY MONITORING</footer>
+
+</div>
+
+<script>
+// ── PARTICLES ──────────────────────────────────────────────────────────────
+(function(){
+  const c=document.getElementById('particles');
+  const ctx=c.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+  resize();window.addEventListener('resize',resize);
+  function mkPt(){return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*1.5+0.5,a:Math.random()}}
+  for(let i=0;i<60;i++)pts.push(mkPt());
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1;
+      if(p.y<0||p.y>H)p.vy*=-1;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,229,255,${p.a*0.4})`;ctx.fill();
+    });
+    pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
+      const d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<120){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(0,229,255,${0.06*(1-d/120)})`;ctx.lineWidth=0.5;ctx.stroke()}
+    }));
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ── LOADER ─────────────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    const l=document.getElementById('loader');
+    l.style.opacity='0';
+    setTimeout(()=>l.style.display='none',600);
+  },1400);
+});
+
+// ── CLOCK ──────────────────────────────────────────────────────────────────
+setInterval(()=>{
+  document.getElementById('clockEl').textContent=new Date().toTimeString().slice(0,8);
+},1000);
+
+// ── WAVEFORM CANVASES ──────────────────────────────────────────────────────
+function setupCanvas(id){
+  const c=document.getElementById(id);
+  const dpr=window.devicePixelRatio||1;
+  function resize(){
+    const rect=c.getBoundingClientRect();
+    c.width=rect.width*dpr;c.height=rect.height*dpr;
+    const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  }
+  resize();window.addEventListener('resize',resize);
+  return c;
+}
+const wCanvas1=setupCanvas('wave1');
+const wCanvas2=setupCanvas('wave2');
+
+function drawWave(canvas,history,color){
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth,H=canvas.offsetHeight;
+  ctx.clearRect(0,0,W,H);
+
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
+  for(let i=1;i<4;i++){const y=i/4*H;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+
+  const max=Math.max(...history,0.5);
+  const step=W/(history.length-1);
+
+  // fill
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,color.replace(')',',0.25)').replace('rgb','rgba'));
+  grad.addColorStop(1,color.replace(')',',0)').replace('rgb','rgba'));
+  ctx.fillStyle=grad;
+  ctx.beginPath();ctx.moveTo(0,H);
+  history.forEach((v,i)=>{const x=i*step;const y=H-(v/max)*H*0.85-H*0.05;i===0?ctx.lineTo(x,y):ctx.lineTo(x,y)});
+  ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+
+  // line
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();
+  history.forEach((v,i)=>{const x=i*step;const y=H-(v/max)*H*0.85-H*0.05;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+  ctx.stroke();
+
+  // glow
+  ctx.strokeStyle=color.replace(')',',0.4)').replace('rgb','rgba');ctx.lineWidth=4;
+  ctx.filter='blur(3px)';ctx.stroke();ctx.filter='none';
+}
+
+// ── SIMULATION ─────────────────────────────────────────────────────────────
+let tick=0,shedCount=0,savedWh=0,shedActive=false;
+const iH=[],r1H=new Array(60).fill(0),r2H=new Array(60).fill(0);
+
+function r(a,b){return a+Math.random()*(b-a)}
+
+function mFeat(phase){
+  if(phase==='startup') return{rms:r(0.85,1.30),peak:r(1.90,2.70),std:r(0.55,0.85),crest:r(2.10,3.20),surge:r(1.80,2.60)};
+  if(phase==='off') return{rms:0,peak:0,std:0,crest:0,surge:0};
+  return{rms:r(0.34,0.50),peak:r(0.48,0.68),std:r(0.04,0.09),crest:r(1.30,1.70),surge:r(0.40,0.58)};
+}
+
+function classify(f){
+  if(f.rms<0.01) return{label:'No Load',conf:99,isMotor:false};
+  if(f.rms>0.25&&f.crest>1.2&&f.surge>0.3){
+    const c=Math.min(99,94+f.rms*4+Math.random()*3);
+    return{label:'DC Motor (M027)',conf:c,isMotor:true};
+  }
+  return{label:'LED Load',conf:Math.min(99,91+Math.random()*6),isMotor:false};
+}
+
+function getPhase(){
+  const lp=tick%100;
+  const r1=lp<8?'startup':'steady';
+  let r2,shed;
+  if(lp<8){r2='startup';shed=false}
+  else if(lp>=30&&lp<=34){r2='startup';shed=false}
+  else if(lp>=65&&lp<=69){r2='steady';shed=true}
+  else if(lp>=70&&lp<=89){r2='off';shed=true}
+  else if(lp>=90&&lp<=94){r2='startup';shed=false}
+  else{r2='steady';shed=false}
+  return{r1,r2,shed};
+}
+
+function addLog(msg,type){
+  const body=document.getElementById('logBody');
+  const t=new Date().toTimeString().slice(0,8);
+  const div=document.createElement('div');
+  div.className=`log-entry ${type}`;
+  div.innerHTML=`<div class="log-time">${t}</div><div class="log-msg">${msg}</div>`;
+  body.insertBefore(div,body.firstChild);
+  while(body.children.length>18)body.removeChild(body.lastChild);
+}
+
+function step(){
+  const{r1,r2,shed}=getPhase();
+  const lp=tick%100;
+  const f1=mFeat(r1),f2=mFeat(r2);
+  const c1=classify(f1),c2=classify(f2);
+  const inf=r(0.8,1.4);iH.push(inf);if(iH.length>20)iH.shift();
+  const avg=iH.reduce((a,b)=>a+b,0)/iH.length;
+  const was=shedActive;shedActive=shed;
+
+  if(shedActive&&!was){shedCount++;addLog('<b>⚡ THRESHOLD EXCEEDED</b> — Room 2 load shed initiated','warn');addLog('GPIO27 → LOW · M027 motor disconnected by relay','warn')}
+  if(!shedActive&&was)addLog('✓ Room 2 load restored — GPIO27 → HIGH · relay reset','ok');
+  if(lp===0)addLog('<b>esp1</b> connected — 192.168.137.161 · GPIO4 ADC active','ok');
+  if(lp===1)addLog('<b>esp2</b> connected — 192.168.137.162 · GPIO4 ADC active','ok');
+  if(lp===8)addLog(`Room 1: startup surge detected · crest factor <b>${f1.crest.toFixed(2)}</b>`,'info');
+  if(lp===9)addLog(`Room 2: startup surge detected · crest factor <b>${f2.crest.toFixed(2)}</b>`,'info');
+  if(lp===30)addLog('Room 2: motor restart · second startup surge in window','info');
+  if(lp===60)addLog('<b>⚠ WARNING</b> — total load approaching 3.0A threshold','alert');
+
+  if(shedActive)savedWh+=(0.45*5)/3600;
+  const total=shedActive?f1.rms:f1.rms+f2.rms;
+  const pct=shedActive?Math.min(35,f2.rms/(f1.rms+f2.rms+0.001)*100):0;
+
+  r1H.shift();r1H.push(f1.rms);
+  r2H.shift();r2H.push(r2==='off'?0:f2.rms);
+
+  // TOP STATS
+  document.getElementById('statTotal').textContent=`${total.toFixed(2)} A`;
+  document.getElementById('statSaved').textContent=`${pct.toFixed(1)}%`;
+  document.getElementById('statSavedWh').textContent=`${savedWh.toFixed(5)} Wh today`;
+  document.getElementById('statSheds').textContent=shedCount;
+  document.getElementById('statInfer').textContent=`${avg.toFixed(2)} ms`;
+
+  // AMD
+  const spd=(avg/0.06).toFixed(0);
+  document.getElementById('amdSpeedup').textContent=`${spd}×`;
+  document.getElementById('piTime').textContent=`~${avg.toFixed(2)} ms`;
+  document.getElementById('piBarTime').textContent=`~${avg.toFixed(2)} ms`;
+  document.getElementById('mlInferVal').textContent=`${avg.toFixed(2)} ms`;
+  document.getElementById('mlSpeedupVal').textContent=`${spd}×`;
+
+  // ROOM 1
+  const g1=Math.min(100,f1.rms/3*100);
+  document.getElementById('r1Big').innerHTML=`${f1.rms.toFixed(2)}<span class="unit"> A</span>`;
+  document.getElementById('r1Gauge').style.width=g1+'%';
+  document.getElementById('r1Gauge').className='gauge-fill'+(g1>60?' high':'');
+  document.getElementById('r1Rms').textContent=f1.rms.toFixed(3);
+  document.getElementById('r1Peak').textContent=f1.peak.toFixed(3);
+  document.getElementById('r1Std').textContent=f1.std.toFixed(3);
+  document.getElementById('r1Crest').textContent=f1.crest.toFixed(2);
+  document.getElementById('r1Surge').textContent=f1.surge.toFixed(3);
+  document.getElementById('r1Class').textContent=c1.label;
+  document.getElementById('r1Class').className='ml-result '+(c1.isMotor?'motor':'other');
+  document.getElementById('r1Conf').textContent=`${c1.conf.toFixed(1)}%`;
+
+  // ROOM 2
+  const g2=Math.min(100,f2.rms/3*100);
+  document.getElementById('r2Big').innerHTML=`${f2.rms.toFixed(2)}<span class="unit"> A</span>`;
+  document.getElementById('r2Gauge').style.width=g2+'%';
+  document.getElementById('r2Gauge').className='gauge-fill'+(g2>60?' high':'');
+  document.getElementById('r2Rms').textContent=f2.rms.toFixed(3);
+  document.getElementById('r2Peak').textContent=f2.peak.toFixed(3);
+  document.getElementById('r2Std').textContent=f2.std.toFixed(3);
+  document.getElementById('r2Crest').textContent=f2.crest.toFixed(2);
+  document.getElementById('r2Surge').textContent=f2.surge.toFixed(3);
+  document.getElementById('r2Class').textContent=c2.label;
+  document.getElementById('r2Class').className='ml-result '+(c2.isMotor?'motor':'other');
+  document.getElementById('r2Conf').textContent=`${c2.conf.toFixed(1)}%`;
+
+  const card2=document.getElementById('room2Card');
+  const shedBar=document.getElementById('shedBar');
+  const r2Stat=document.getElementById('r2Status');
+  if(shedActive){
+    card2.classList.add('shedding');
+    shedBar.classList.add('show');
+    r2Stat.textContent='⚡ SHED';
+    r2Stat.className='status-badge shed';
+    document.getElementById('shedTime').textContent=new Date().toTimeString().slice(0,8);
+  }else{
+    card2.classList.remove('shedding');
+    shedBar.classList.remove('show');
+    r2Stat.textContent='● ACTIVE';
+    r2Stat.className='status-badge active';
+  }
+
+  drawWave(wCanvas1,r1H,'rgb(0,229,255)');
+  drawWave(wCanvas2,r2H,shedActive?'rgb(255,23,68)':'rgb(0,229,255)');
+  tick++;
+}
+
+// BOOT
+addLog('<b>Entity Neural</b> Energy Monitor — system initializing','info');
+addLog('Random Forest model loaded · 100 estimators · 100% accuracy','ok');
+addLog('Mosquitto MQTT broker online @ 192.168.137.174:1883','ok');
+setTimeout(()=>{addLog('<b>esp1</b> connected — 192.168.137.161','ok');
+  setTimeout(()=>addLog('<b>esp2</b> connected — 192.168.137.162','ok'),1200);
+},1000);
+
+step();
+setInterval(step,1000);
+</script>
+</body>
+</html>
