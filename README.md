@@ -27,7 +27,7 @@ The **entire pipeline runs locally** — no cloud, no subscription, no internet 
 
 ## 🎥 Demo
 
-> **Live dashboard →** [entityneural.github.io/amd-slingshot-2026](https://entityneural.github.io/amd-slingshot-2026/)
+> **Live dashboard →** [entityneural.github.io/amd-slingshot-2026](https://prismatic-crisp-0b1a62.netlify.app/)
 
 <div align="center">
 
@@ -39,7 +39,7 @@ The **entire pipeline runs locally** — no cloud, no subscription, no internet 
 │  8 – 30s     │  Steady-state operation · RMS 0.34–0.50A             │
 │  30 – 35s    │  Room 2 motor restart · second surge in window       │
 │  35 – 65s    │  Both rooms steady · total load climbing             │
-│  60s         │  ⚠ WARNING — approaching 3.0A threshold             │
+│  60s         │  ⚠ WARNING — approaching 3.0A threshold              │
 │  65s         │  🚨 THRESHOLD EXCEEDED — Room 2 load shed triggered  │
 │  65 – 89s    │  Room 2 disconnected · energy saved counter ticking  │
 │  90 – 100s   │  Room 2 restored · loop repeats                      │
@@ -58,55 +58,55 @@ The **entire pipeline runs locally** — no cloud, no subscription, no internet 
 └─────────────────────────────────────────────────────────────────────────────┘
 
   ROOM 1                                    ROOM 2
-  ┌─────────────────────┐                   ┌─────────────────────┐
-  │  5V Supply          │                   │  5V Supply          │
-  │      │              │                   │      │              │
-  │  ACS712 IP+/IP-     │                   │  ACS712 IP+/IP-     │
-  │  (current path)     │                   │  (current path)     │
-  │      │              │                   │      │              │
-  │  Relay COM→NO       │                   │  Relay COM→NO       │
-  │      │              │                   │      │              │
-  │  M027 Motor         │                   │  M027 Motor         │
-  │                     │                   │                     │
-  │  ESP32-C6 #1        │                   │  ESP32-C6 #2        │
-  │  GPIO4 ← OUT        │                   │  GPIO4 ← OUT        │
-  │  3.3V → VCC         │                   │  3.3V → VCC         │
-  │  GND  → GND         │                   │  GND  → GND         │
-  │  500Hz ADC          │                   │  500Hz ADC          │
-  │  Features extracted │                   │  Features extracted │
-  │  on device          │                   │  on device          │
-  └────────┬────────────┘                   └────────┬────────────┘
+  ┌─────────────────────┐                   ┌──────────────────────┐
+  │  5V Supply          │                   │  5V Supply           │
+  │      │              │                   │      │               │
+  │  ACS712 IP+/IP-     │                   │  ACS712 IP+/IP-      │
+  │  (current path)     │                   │  (current path)      │
+  │      │              │                   │      │               │
+  │  Relay COM→NO       │                   │  Relay COM→NO        │
+  │      │              │                   │      │               │
+  │  M027 Motor         │                   │  M027 Motor          │
+  │                     │                   │                      │
+  │  ESP32-C6 #1        │                   │  ESP32-C6 #2         │
+  │  GPIO4 ← OUT        │                   │  GPIO4 ← OUT         │
+  │  3.3V → VCC         │                   │  3.3V → VCC          │
+  │  GND  → GND         │                   │  GND  → GND          │
+  │  500Hz ADC          │                   │  500Hz ADC           │
+  │  Features extracted │                   │  Features extracted  │
+  │  on device          │                   │  on device           │
+  └────────┬────────────┘                   └─────────┬────────────┘
            │ MQTT (JSON)                              │ MQTT (JSON)
            │ topic: energy/current                    │ topic: energy/current
            └──────────────────┬───────────────────────┘
                               │
-              ┌───────────────▼───────────────────────┐
+              ┌───────────────▼────────────────────────┐
               │         Raspberry Pi 5 (8GB)           │
               │                                        │
-              │  ┌──────────┐  ┌────────────────────┐ │
-              │  │ Mosquitto │  │  Python Subscriber │ │
-              │  │  MQTT     │──│  paho-mqtt         │ │
-              │  │  Broker   │  │  numpy pipeline    │ │
-              │  └──────────┘  └────────┬───────────┘ │
+              │  ┌──────────┐  ┌────────────────────┐  │
+              │  │ Mosquitto│  │  Python Subscriber │  │ 
+              │  │  MQTT    │──│  paho-mqtt         │  │
+              │  │  Broker  │  │  numpy pipeline    │  │
+              │  └──────────┘  └────────┬───────────┘  │
               │                         │              │
-              │              ┌──────────▼──────────┐  │
+              │              ┌──────────▼───────────┐  │
               │              │  Random Forest Model │  │
               │              │  sklearn · model.pkl │  │
               │              │  5 features → label  │  │
               │              └──────────┬───────────┘  │
               │                         │              │
-              │              ┌──────────▼──────────┐  │
+              │              ┌──────────▼───────────┐  │
               │              │  Priority Engine     │  │
               │              │  Motor = HIGH        │  │
               │              │  LED   = LOW (shed)  │  │
               │              └──────────┬───────────┘  │
               │                         │              │
-              │              ┌──────────▼──────────┐  │
+              │              ┌──────────▼───────────┐  │
               │              │  RPi.GPIO Control    │  │
               │              │  GPIO17 → Relay 1    │  │
               │              │  GPIO27 → Relay 2    │  │
-              │              └─────────────────────┘  │
-              └───────────────────────────────────────┘
+              │              └──────────────────────┘  │
+              └────────────────────────────────────────┘
                               │
               ┌───────────────▼──────────────┐
               │   Firebase + Flask Dashboard │
