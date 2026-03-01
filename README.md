@@ -222,35 +222,6 @@ ELSE:
 
 ---
 
-## 📂 Repository Structure
-
-```
-amd-slingshot-2026/
-│
-├── firmware/
-│   └── main.py                  # ESP32-C6 MicroPython — flash to BOTH boards
-│
-├── hub/
-│   ├── subscriber.py            # Pi MQTT subscriber + ML pipeline
-│   ├── relay_control.py         # Manual relay control CLI
-│   └── model.pkl                # Trained Random Forest (sklearn)
-│
-├── training/
-│   ├── train_model.py           # Generate synthetic data + train RF
-│   └── benchmark.py             # AMD vs Pi inference benchmark
-│
-├── dashboard/
-│   └── EntityNeural_Dashboard.html   # Standalone web dashboard (no server needed)
-│
-├── android/
-│   └── MainActivity.kt          # WebView Android app (loads dashboard URL)
-│
-├── docs/
-│   └── wiring_diagram.svg       # Full system wiring diagram
-│
-└── README.md
-```
-
 ---
 
 ## 🚀 Quick Start
