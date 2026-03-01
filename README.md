@@ -66,7 +66,7 @@ The **entire pipeline runs locally** — no cloud, no subscription, no internet 
   │      │              │                   │      │               │
   │  Relay COM→NO       │                   │  Relay COM→NO        │
   │      │              │                   │      │               │
-  │  M027 Motor         │                   │  M027 Motor          │
+  │  N20 Motor          │                   │  N20 Motor           │
   │                     │                   │                      │
   │  ESP32-C6 #1        │                   │  ESP32-C6 #2         │
   │  GPIO4 ← OUT        │                   │  GPIO4 ← OUT         │
@@ -178,12 +178,12 @@ Features → [RMS, Peak, Std, Crest, Surge]
          → label + confidence
 ```
 
-**Training data:** 1200 synthetic windows generated from M027 motor profiles and LED load profiles, with realistic noise injection. Cross-validated accuracy: **100%**.
+**Training data:** 1200 synthetic windows generated from N20 motor profiles and LED load profiles, with realistic noise injection. Cross-validated accuracy: **100%**.
 
 **Decision boundary insight:**
 ```
 IF rms > 0.25A AND crest > 1.2 AND surge > 0.30A:
-    → DC Motor (M027)  [high RMS, broad crest range, startup surge present]
+    → DC Motor (N20)  [high RMS, broad crest range, startup surge present]
 ELSE:
     → LED Load         [low RMS, narrow crest ≈1.1, flat surge]
 ```
@@ -387,7 +387,7 @@ client.loop_forever()
 
 ---
 
-## 📊 Signal Profiles — M027 Motor
+## 📊 Signal Profiles — N20 Motor
 
 ```
 STARTUP SURGE (first ~200ms):
@@ -431,7 +431,7 @@ Thonny: Show ESP MQTT publish loop running on one board
 Point to: both boards, Pi, relay modules
 
 **[0:20 – 0:50] Show the dashboard**
-> "Each ESP samples current at 500Hz, extracts 5 statistical features on-device, and publishes over MQTT. The Pi classifies the load type in real time — right now it's correctly identifying both as DC Motor M027."
+> "Each ESP samples current at 500Hz, extracts 5 statistical features on-device, and publishes over MQTT. The Pi classifies the load type in real time — right now it's correctly identifying both as DC Motor N20."
 
 Point to: RMS values, crest factor, classification badge
 
