@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=ED1C24&height=200&section=header&text=Entity%20Neural&fontSize=60&fontColor=ffffff&fontAlignY=38&desc=Intelligent%20Energy%20Monitoring%20System&descAlignY=58&descAlign=50&animation=fadeIn" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=ED1C24&height=200&section=header&text=Entity%20Energy&fontSize=60&fontColor=ffffff&fontAlignY=38&desc=Intelligent%20Energy%20Monitoring%20System&descAlignY=58&descAlign=50&animation=fadeIn" width="100%"/>
 
 <br/>
 
@@ -17,9 +17,9 @@
 
 ---
 
-## 🧠 What Is Entity Neural?
+## 🧠 What Is Entity Energy?
 
-**Entity Neural** is a plug-and-play intelligent energy monitoring and autonomous load management system built for the **AMD Slingshot 2026 Challenge**. It uses two ESP32-C6 Wi-Fi microcontrollers as sensing nodes — each paired with an ACS712 Hall-effect current sensor — to measure real-time AC current drawn by electrical loads. A **Random Forest machine learning model** classifies the load type (DC Motor vs LED) from extracted statistical features, and a Raspberry Pi 5 hub makes autonomous decisions to shed non-critical loads when total consumption exceeds a configurable threshold — triggering physical GPIO-controlled relays.
+**Entity Energy** is a plug-and-play intelligent energy monitoring and autonomous load management system built for the **AMD Slingshot 2026 Challenge**. It uses two ESP32-C6 Wi-Fi microcontrollers as sensing nodes — each paired with an ACS712 Hall-effect current sensor — to measure real-time AC current drawn by electrical loads. A **Random Forest machine learning model** classifies the load type (DC Motor vs LED) from extracted statistical features, and a Raspberry Pi 5 hub makes autonomous decisions to shed non-critical loads when total consumption exceeds a configurable threshold — triggering physical GPIO-controlled relays.
 
 The **entire pipeline runs locally** — no cloud, no subscription, no internet dependency after deployment.
 
@@ -27,7 +27,7 @@ The **entire pipeline runs locally** — no cloud, no subscription, no internet 
 
 ## 🎥 Demo
 
-> **Live dashboard →** [entityneural.github.io/amd-slingshot-2026](https://prismatic-crisp-0b1a62.netlify.app/)
+> **Live dashboard →** [entityEnergy.github.io/amd-slingshot-2026](https://prismatic-crisp-0b1a62.netlify.app/)
 
 <div align="center">
 
@@ -54,7 +54,7 @@ The **entire pipeline runs locally** — no cloud, no subscription, no internet 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        ENTITY NEURAL — FULL STACK                           │
+│                        ENTITY Energy — FULL STACK                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 
   ROOM 1                                    ROOM 2
@@ -240,7 +240,7 @@ ELSE:
 
 Expected output:
 ```
-Connecting to WiFi: EntityNeural_AP
+Connecting to WiFi: EntityEnergy_AP
 WiFi connected: 192.168.137.161
 MQTT connected to 192.168.137.174
 Calibrating — disconnect motor now...
@@ -261,10 +261,10 @@ sudo systemctl enable mosquitto
 sudo systemctl start mosquitto
 
 # Copy model.pkl to Pi
-scp hub/model.pkl pi@192.168.137.174:~/entityneural/
+scp hub/model.pkl pi@192.168.137.174:~/entityEnergy/
 
 # Run subscriber
-cd ~/entityneural
+cd ~/entityEnergy
 python3 subscriber.py
 ```
 
@@ -272,18 +272,18 @@ python3 subscriber.py
 
 ```bash
 # Option 1: GitHub Pages (free)
-# 1. Create repo: entityneural-dashboard
-# 2. Upload EntityNeural_Dashboard.html → rename to index.html
+# 1. Create repo: entityEnergy-dashboard
+# 2. Upload EntityEnergy_Dashboard.html → rename to index.html
 # 3. Settings → Pages → Deploy from branch → main
-# 4. URL: https://yourusername.github.io/entityneural-dashboard/
+# 4. URL: https://yourusername.github.io/entityEnergy-dashboard/
 
 # Option 2: Netlify (drag-and-drop, instant)
 # 1. Go to https://netlify.com
-# 2. Drag EntityNeural_Dashboard.html onto the deploy zone
+# 2. Drag EntityEnergy_Dashboard.html onto the deploy zone
 # 3. Get instant URL
 
 # Option 3: Local (open directly in browser)
-# Just double-click EntityNeural_Dashboard.html — works offline!
+# Just double-click EntityEnergy_Dashboard.html — works offline!
 ```
 
 ---
@@ -293,7 +293,7 @@ python3 subscriber.py
 The Android app is a **WebView wrapper** — it loads your deployed dashboard URL in fullscreen. Zero complex code.
 
 1. Android Studio → New Project → Empty Views Activity
-2. Package: `com.entityneural.energymonitor` · Language: Kotlin · Min SDK: API 24
+2. Package: `com.entityEnergy.energymonitor` · Language: Kotlin · Min SDK: API 24
 3. `AndroidManifest.xml` — add before `<application>`:
    ```xml
    <uses-permission android:name="android.permission.INTERNET" />
@@ -307,7 +307,7 @@ The Android app is a **WebView wrapper** — it loads your deployed dashboard UR
 
 ## 🧪 Pi Subscriber Code
 
-Save this as `~/entityneural/subscriber.py` on your Raspberry Pi:
+Save this as `~/entityEnergy/subscriber.py` on your Raspberry Pi:
 
 ```python
 import paho.mqtt.client as mqtt
